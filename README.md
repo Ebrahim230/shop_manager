@@ -49,4 +49,4 @@ Sales Manager is a full-stack MERN application to manage products, track sales, 
 ### Backend
 1. Clone the repository:
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/Ebrahim230/shop_manager.git
