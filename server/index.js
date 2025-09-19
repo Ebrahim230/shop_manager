@@ -5,6 +5,7 @@ const connectDB = require('./config/database');
 const http = require('http');
 const { Server } = require('socket.io');
 const Product = require('./models/productModel');
+const costRoute = require('./routes/costRoutes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -24,6 +25,7 @@ app.use('/api/product', productRoute);
 app.use('/api/sales', salesRoute);
 app.use('/api/report', reportRoute);
 app.use('/api/alert', alertRoute);
+app.use('/api/costs',costRoute);
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
