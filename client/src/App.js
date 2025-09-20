@@ -5,6 +5,7 @@ import NotFound from './pages/NotFound'
 import Product from './pages/Product';
 import Sales from './pages/Sales';
 import Dashboard from './components/Dashboard';
+import Mohajons from './pages/MohajonPage';
 
 const App = () => {
   return (
@@ -14,6 +15,7 @@ const App = () => {
         <Route path='/products' element={<Product/>}/>
         <Route path='/sales' element={<Sales/>}/>
         <Route path='/dashboard' element={<Dashboard/>}/>
+        <Route path='/mohajons' element={<Mohajons/>}/>
         <Route path='*' element={<NotFound />} />
       </Routes>
     </BrowserRouter>

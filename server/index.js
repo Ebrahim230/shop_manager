@@ -6,6 +6,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const Product = require('./models/productModel');
 const costRoute = require('./routes/costRoutes');
+const mohajonRoutes  = require('./routes/mohajonRoutes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -26,6 +27,8 @@ app.use('/api/sales', salesRoute);
 app.use('/api/report', reportRoute);
 app.use('/api/alert', alertRoute);
 app.use('/api/costs',costRoute);
+app.use('/api/mohajons', mohajonRoutes);
+
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
