@@ -3,9 +3,16 @@ const Sales = require('../models/salesModel');
 
 const addCost = async (req, res) => {
   try {
-    const cost = new Cost(req.body);
+    const { category, title, amount, date, notes } = req.body;
+    const cost = new Cost({
+      category,
+      title,
+      amount,
+      notes: notes || '',
+      date: date ? new Date(date) : new Date()
+    });
     await cost.save();
-    return res.status(201).json(cost);
+    res.status(201).json(cost);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -23,41 +30,22 @@ const getAllCosts = async (req, res) => {
 const calcSummary = async (match = {}) => {
   const salesAgg = await Sales.aggregate([
     { $match: match },
-    {
-      $group: {
-        _id: null,
-        totalRevenue: { $sum: '$total' },
-        totalProfit: { $sum: '$profit' },
-      },
-    },
+    { $group: { _id: null, totalRevenue: { $sum: '$total' }, totalProfit: { $sum: '$profit' } } }
   ]);
   const totalRevenue = salesAgg[0]?.totalRevenue || 0;
   const totalProfit = salesAgg[0]?.totalProfit || 0;
 
   const costAgg = await Cost.aggregate([
     { $match: match },
-    {
-      $group: {
-        _id: '$category',
-        total: { $sum: '$amount' },
-      },
-    },
+    { $group: { _id: '$category', total: { $sum: '$amount' } } }
   ]);
   const costs = { product: 0, utility: 0, family: 0 };
-  costAgg.forEach((c) => (costs[c._id] = c.total));
+  costAgg.forEach(c => costs[c._id] = c.total);
 
   const remainingAmount = totalRevenue - totalProfit - costs.product - costs.utility;
   const netProfit = totalProfit - costs.family;
 
-  return {
-    totalRevenue,
-    totalProfit,
-    productCost: costs.product,
-    utilityCost: costs.utility,
-    familyExpenses: costs.family,
-    remainingAmount,
-    netProfit,
-  };
+  return { totalRevenue, totalProfit, productCost: costs.product, utilityCost: costs.utility, familyExpenses: costs.family, remainingAmount, netProfit };
 };
 
 const getNetSummary = async (req, res) => {
@@ -66,13 +54,16 @@ const getNetSummary = async (req, res) => {
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [overall, monthly, daily] = await Promise.all([
+    const [overall, monthly, daily, allCosts, dailyDetails, monthlyDetails] = await Promise.all([
       calcSummary(),
       calcSummary({ date: { $gte: startOfMonth } }),
       calcSummary({ date: { $gte: startOfDay } }),
+      Cost.find().sort({ date: -1 }),
+      Cost.find({ date: { $gte: startOfDay } }).sort({ date: -1 }),
+      Cost.find({ date: { $gte: startOfMonth } }).sort({ date: -1 })
     ]);
 
-    res.json({ overall, monthly, daily });
+    res.json({ overall, monthly, daily, details: allCosts, dailyDetails, monthlyDetails });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
