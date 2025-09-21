@@ -1,10 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const mohajonController = require('../controllers/mohajonController');
+const {
+  createMohajon,
+  getAllMohajons,
+  getMohajon,
+  addTransaction,
+  updateMohajon,
+  deleteMohajon,
+  deleteTransaction
+} = require('../controllers/mohajonController');
 
-router.post('/', mohajonController.createMohajon);
-router.get('/', mohajonController.getAllMohajons);
-router.get('/:id', mohajonController.getMohajon);
-router.post('/:id/transaction', mohajonController.addTransaction);
+router.post('/', createMohajon);
+router.get('/', getAllMohajons);
+router.get('/:id', getMohajon);
+router.put('/:id', updateMohajon);
+router.delete('/:id', deleteMohajon);
+
+router.post('/:id/transaction', addTransaction);
+router.delete('/:id/transaction/:tid', deleteTransaction);
 
 module.exports = router;

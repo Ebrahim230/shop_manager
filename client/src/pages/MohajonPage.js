@@ -9,20 +9,30 @@ const MohajonPage = () => {
   const [transactionType, setTransactionType] = useState('credit');
   const [transactionAmount, setTransactionAmount] = useState(0);
   const [transactionNotes, setTransactionNotes] = useState('');
-  const [transactionDate, setTransactionDate] = useState('');
+  const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [editMohajonName, setEditMohajonName] = useState('');
+  const [editMohajonContact, setEditMohajonContact] = useState('');
 
   const fetchMohajons = async () => {
     try {
       const res = await api.get('/mohajons');
       setMohajons(res.data);
-    } catch {}
+    } catch (err) {
+      console.error(err);
+      alert('Failed to fetch Mohajons');
+    }
   };
 
   const fetchMohajonDetail = async (id) => {
     try {
       const res = await api.get(`/mohajons/${id}`);
       setSelectedMohajon(res.data);
-    } catch {}
+      setEditMohajonName(res.data.name);
+      setEditMohajonContact(res.data.contact || '');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to fetch Mohajon details');
+    }
   };
 
   const handleAddMohajon = async (e) => {
@@ -30,9 +40,13 @@ const MohajonPage = () => {
     if (!newMohajonName) return alert('Enter mohajon name');
     try {
       await api.post('/mohajons', { name: newMohajonName, contact: newMohajonContact });
-      setNewMohajonName(''); setNewMohajonContact('');
+      setNewMohajonName('');
+      setNewMohajonContact('');
       fetchMohajons();
-    } catch {}
+    } catch (err) {
+      console.error(err);
+      alert('Failed to add Mohajon');
+    }
   };
 
   const handleAddTransaction = async (e) => {
@@ -47,9 +61,49 @@ const MohajonPage = () => {
       });
       setTransactionAmount(0);
       setTransactionNotes('');
-      setTransactionDate('');
+      setTransactionDate(new Date().toISOString().split('T')[0]);
       fetchMohajonDetail(selectedMohajon._id);
-    } catch {}
+    } catch (err) {
+      console.error(err);
+      alert('Failed to add transaction');
+    }
+  };
+
+  const handleUpdateMohajon = async () => {
+    if (!selectedMohajon) return;
+    try {
+      await api.put(`/mohajons/${selectedMohajon._id}`, { name: editMohajonName, contact: editMohajonContact });
+      fetchMohajons();
+      fetchMohajonDetail(selectedMohajon._id);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update Mohajon');
+    }
+  };
+
+  const handleDeleteMohajon = async () => {
+    if (!selectedMohajon) return;
+    if (!window.confirm('Are you sure you want to delete this Mohajon?')) return;
+    try {
+      await api.delete(`/mohajons/${selectedMohajon._id}`);
+      setSelectedMohajon(null);
+      fetchMohajons();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete Mohajon');
+    }
+  };
+
+  const handleDeleteTransaction = async (tid) => {
+    if (!selectedMohajon) return;
+    if (!window.confirm('Are you sure you want to delete this transaction?')) return;
+    try {
+      await api.delete(`/mohajons/${selectedMohajon._id}/transaction/${tid}`);
+      fetchMohajonDetail(selectedMohajon._id);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete transaction');
+    }
   };
 
   useEffect(() => { fetchMohajons(); }, []);
@@ -85,6 +139,13 @@ const MohajonPage = () => {
           <p><strong>Total Debit:</strong> ৳ {selectedMohajon.debit || 0}</p>
           <p><strong>Remaining Amount:</strong> ৳ {selectedMohajon.balance || 0}</p>
 
+          <div className="mt-4 mb-4 flex gap-2">
+            <input type="text" value={editMohajonName} onChange={e => setEditMohajonName(e.target.value)} className="border p-1" />
+            <input type="text" value={editMohajonContact} onChange={e => setEditMohajonContact(e.target.value)} className="border p-1" />
+            <button onClick={handleUpdateMohajon} className="bg-yellow-500 text-white px-3 py-1 rounded">Update</button>
+            <button onClick={handleDeleteMohajon} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+          </div>
+
           <h3 className="mt-4 font-semibold">Add Transaction</h3>
           <form onSubmit={handleAddTransaction} className="flex flex-col gap-2 mb-4">
             <select value={transactionType} onChange={e => setTransactionType(e.target.value)} className="border p-1 w-full">
@@ -105,15 +166,19 @@ const MohajonPage = () => {
                 <th className="border p-2">Type</th>
                 <th className="border p-2">Amount</th>
                 <th className="border p-2">Notes</th>
+                <th className="border p-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {selectedMohajon.transactions.map((t, i) => (
-                <tr key={i}>
+                <tr key={t._id}>
                   <td className="border p-2">{new Date(t.date).toLocaleDateString()}</td>
                   <td className="border p-2 capitalize">{t.type}</td>
                   <td className={`border p-2 ${t.type === 'debit' ? 'text-red-600' : 'text-green-600'}`}>৳ {t.amount}</td>
                   <td className="border p-2">{t.notes || '-'}</td>
+                  <td className="border p-2">
+                    <button onClick={() => handleDeleteTransaction(t._id)} className="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
