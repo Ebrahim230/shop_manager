@@ -1,4 +1,5 @@
 const Mohajon = require('../models/mohajonModel');
+const Cost = require('../models/costModel');
 
 exports.createMohajon = async (req, res) => {
   try {
@@ -39,8 +40,20 @@ exports.addTransaction = async (req, res) => {
     const { type, amount, notes, date } = req.body;
     const mohajon = await Mohajon.findById(id);
     if (!mohajon) return res.status(404).json({ message: 'Mohajon not found' });
+
     mohajon.transactions.push({ type, amount, notes, date });
     await mohajon.save();
+
+    if (type === 'debit' && date) {
+      await Cost.create({
+        category: 'product',
+        title: 'Product Cost',
+        amount: Number(amount),
+        notes: notes || `Mohajon: ${mohajon.name}`,
+        date
+      });
+    }
+
     const credit = mohajon.transactions.filter(t => t.type === 'credit').reduce((acc, t) => acc + t.amount, 0);
     const debit = mohajon.transactions.filter(t => t.type === 'debit').reduce((acc, t) => acc + t.amount, 0);
     const balance = credit - debit;
